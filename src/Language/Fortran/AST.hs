@@ -307,6 +307,7 @@ data Statement a  =
   | StEndType             a SrcSpan (Maybe String)
   | StSequence            a SrcSpan
   | StForall              a SrcSpan (Maybe String) (ForallHeader a)
+  | StForallStatement     a SrcSpan (ForallHeader a) (Statement a)
   | StEndForall           a SrcSpan (Maybe String)
   -- Following is a temporary solution to a complicated FORMAT statement
   -- parsing problem.

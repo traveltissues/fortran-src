@@ -6,6 +6,7 @@ module Language.Fortran.Transformation.Grouping ( groupForall
                                                 ) where
 
 import Language.Fortran.AST
+import Language.Fortran.Util.Position
 import Language.Fortran.Analysis
 import Language.Fortran.Transformation.TransformMonad
 
@@ -49,6 +50,9 @@ groupForall' (b:bs) = b' : bs'
                collectNonForallBlocks groupedBlocks mTarget
           in ( BlForall a (getTransSpan s blocks) label mTarget header blocks endLabel
              , leftOverBlocks)
+        | StForallStatement _ _ header st' <- st ->
+          let block = BlStatement a (getSpan st') Nothing st' in
+          ( BlForall a (getTransSpan s st') label Nothing header [block] Nothing, groupedBlocks )
       b | containsGroups b ->
         ( applyGroupingToSubblocks groupForall' b, groupedBlocks )
       _ -> (b, groupedBlocks)

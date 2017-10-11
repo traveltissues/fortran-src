@@ -1032,6 +1032,10 @@ FORALL :: { Statement A0 }
   let (h,s) = $2 in
   StForall () (getTransSpan $1 s) Nothing h
 }
+| forall FORALL_HEADER FORALL_ASSIGNMENT_STMT {
+  let (h,_) = $2 in
+  StForallStatement () (getTransSpan $1 $3) h $3
+}
 
 FORALL_HEADER
   :: { (ForallHeader A0, SrcSpan) }
@@ -1058,7 +1062,6 @@ FORALL_TRIPLET_SPEC :: { (Name, Expression A0, Expression A0, Maybe (Expression 
 FORALL_TRIPLET_SPEC
 : NAME '=' EXPRESSION ':' EXPRESSION { ($1, $3, $5, Nothing) }
 | NAME '=' EXPRESSION ':' EXPRESSION ',' EXPRESSION { ($1, $3, $5, Just $7) }
-
 
 FORALL_ASSIGNMENT_STMT :: { Statement A0 }
 FORALL_ASSIGNMENT_STMT :
