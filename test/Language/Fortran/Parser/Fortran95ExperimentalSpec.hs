@@ -308,8 +308,8 @@ spec =
         let eAssign = StExpressionAssign () u expSub1 expSub2
 
         it "parses basic FORALL statements" $ do
-          let stStr = "FORALL (I=1:N, I /= 2) A(I,I) = X(I)"
-          let expected = StForallStatement () u (ForallHeader tripletSpecList Nothing) eAssign
+          let stStr = "FORALL (I=1:N, I /= 2)" -- A(I,I) = X(I)"
+          let expected = StForall () u Nothing (ForallHeader tripletSpecList Nothing)-- eAssign
           sParser stStr `shouldBe'` expected
 
       describe "ENDFORALL statements" $ do

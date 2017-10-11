@@ -559,8 +559,8 @@ EXECUTABLE_STATEMENT :: { Statement A0 }
     in StCall () (getTransSpan $1 $5) $2 (Just alist) }
 | return { StReturn () (getSpan $1) Nothing }
 | return EXPRESSION { StReturn () (getTransSpan $1 $2) (Just $2) }
-| FORALL_STMT { $1 }
-| END_FORALL_STMT { $1 }
+| FORALL { $1 }
+| END_FORALL { $1 }
 
 ARGUMENTS :: { [ Argument A0 ] }
 : ARGUMENTS ',' ARGUMENT { $3 : $1 }
@@ -1022,12 +1022,8 @@ IMPLIED_DO :: { Expression A0 }
           expList = AList () (getTransSpan $2 exps) ($2 : $4 : reverse $6) }
     in ExpImpliedDo () (getTransSpan $1 $9) expList $8 }
 
-FORALL_STMT :: { Statement A0 }
-: forall FORALL_HEADER FORALL_ASSIGNMENT_STMT {
-  let (h,s) = $2 in
-  StForallStatement () (getTransSpan $1 $3) h $3
-}
-| id ':' forall FORALL_HEADER {
+FORALL :: { Statement A0 }
+: id ':' forall FORALL_HEADER {
   let (TId s1 id) = $1 in
   let (h,s2) = $4 in
   StForall () (getTransSpan s1 s2) (Just id) h
@@ -1073,8 +1069,8 @@ POINTER_ASSIGNMENT_STMT :: { Statement A0 }
 POINTER_ASSIGNMENT_STMT :
  DATA_REF '=>' EXPRESSION { StPointerAssign () (getTransSpan $1 $3) $1 $3 }
 
-END_FORALL_STMT :: { Statement A0 }
-END_FORALL_STMT :
+END_FORALL :: { Statement A0 }
+END_FORALL :
    endforall    { StEndForall () (getSpan $1) Nothing }
  | endforall id { let (TId s id) = $2 in StEndForall () (getTransSpan $1 s) (Just id)}
 
