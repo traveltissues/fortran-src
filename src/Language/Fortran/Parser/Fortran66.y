@@ -132,7 +132,7 @@ OTHER_PROGRAM_UNIT
 | function NAME MAYBE_ARGUMENTS NEWLINE BLOCKS end MAYBE_NEWLINE
   { PUFunction () (getTransSpan $1 $6) Nothing (None () initSrcSpan False) $2 $3 Nothing (reverse $5) Nothing  }
 | subroutine NAME MAYBE_ARGUMENTS NEWLINE BLOCKS end MAYBE_NEWLINE
-  { PUSubroutine () (getTransSpan $1 $6) False $2 $3 (reverse $5) Nothing }
+  { PUSubroutine () (getTransSpan $1 $6) (None () initSrcSpan False) $2 $3 (reverse $5) Nothing }
 | blockData NEWLINE BLOCKS end MAYBE_NEWLINE { PUBlockData () (getTransSpan $1 $4) Nothing (reverse $3) }
 
 MAYBE_ARGUMENTS :: { Maybe (AList Expression A0) }

@@ -254,10 +254,10 @@ SUBPROGRAM_UNIT :: { ProgramUnit A0 }
           return $ PUFunction () (getTransSpan $1 $10) Nothing (None () initSrcSpan True) $3 $4 $5 (reverse $8) $9 } }
 | subroutine NAME MAYBE_ARGUMENTS MAYBE_COMMENT NEWLINE BLOCKS MAYBE_SUBPROGRAM_UNITS SUBROUTINE_END
   {% do { unitNameCheck $8 $2;
-          return $ PUSubroutine () (getTransSpan $1 $8) False $2 $3 (reverse $6) $7 } }
+          return $ PUSubroutine () (getTransSpan $1 $8) (None () initSrcSpan False) $2 $3 (reverse $6) $7 } }
 | recursive subroutine NAME MAYBE_ARGUMENTS MAYBE_COMMENT NEWLINE BLOCKS MAYBE_SUBPROGRAM_UNITS SUBROUTINE_END
   {% do { unitNameCheck $9 $3;
-          return $ PUSubroutine () (getTransSpan $1 $9) True $3 $4 (reverse $7) $8 } }
+          return $ PUSubroutine () (getTransSpan $1 $9) (None () initSrcSpan True) $3 $4 (reverse $7) $8 } }
 | comment { let (TComment s c) = $1 in PUComment () s (Comment c) }
 
 MAYBE_ARGUMENTS :: { Maybe (AList Expression A0) }

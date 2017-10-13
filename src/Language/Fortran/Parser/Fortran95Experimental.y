@@ -244,9 +244,10 @@ SUBPROGRAM_UNIT :: { ProgramUnit A0 }
   {% do { unitNameCheck $10 $3;
           let (fSpec, typeSpec) = $1 in
           return $ PUFunction () (getTransSpan $2 $10) typeSpec fSpec $3 $4 $6 (reverse $8) $9 } }
-| subroutine NAME MAYBE_ARGUMENTS MAYBE_COMMENT NEWLINE BLOCKS MAYBE_SUBPROGRAM_UNITS SUBROUTINE_END
-  {% do { unitNameCheck $8 $2;
-          return $ PUSubroutine () (getTransSpan $1 $8) False $2 $3 (reverse $6) $7 } }
+| FUNCTION_SPEC subroutine NAME MAYBE_ARGUMENTS MAYBE_COMMENT NEWLINE BLOCKS MAYBE_SUBPROGRAM_UNITS SUBROUTINE_END
+  {% do { unitNameCheck $9 $3;
+          let (fSpec, _) = $1 in
+          return $ PUSubroutine () (getTransSpan $2 $9) fSpec $3 $4 (reverse $7) $8 } }
 | comment { let (TComment s c) = $1 in PUComment () s (Comment c) }
 | recursive RECURSIVE_SUBPROGRAM_UNIT { setSpan (getTransSpan $1 $2) $2 }
 
@@ -258,9 +259,12 @@ RECURSIVE_SUBPROGRAM_UNIT :: { ProgramUnit A0 }
     let typeSpec = snd $1
     return $ PUFunction () (getTransSpan $2 $10) typeSpec fSpec $3 $4 $6 (reverse $8) $9
   }
-| subroutine NAME MAYBE_ARGUMENTS MAYBE_COMMENT NEWLINE BLOCKS MAYBE_SUBPROGRAM_UNITS SUBROUTINE_END
-  {% do { unitNameCheck $8 $2;
-          return $ PUSubroutine () (getTransSpan $1 $8) True $2 $3 (reverse $6) $7 } }
+| FUNCTION_SPEC subroutine NAME MAYBE_ARGUMENTS MAYBE_COMMENT NEWLINE BLOCKS MAYBE_SUBPROGRAM_UNITS SUBROUTINE_END
+  {% do
+    unitNameCheck $9 $3
+    fSpec <- either fail return $ fst $1 `buildPUFunctionOpt` None () (getSpan $ fst $1) True
+    return $ PUSubroutine () (getTransSpan $2 $9) fSpec $3 $4 (reverse $7) $8
+  }
 
 
 FUNCTION_SPEC :: { (PUFunctionOpt A0, Maybe (TypeSpec A0)) }

@@ -159,7 +159,7 @@ PROGRAM_UNIT
 | function NAME MAYBE_ARGUMENTS NEWLINE BLOCKS end
   { PUFunction () (getTransSpan $1 $6) Nothing (None () initSrcSpan False) $2 $3 Nothing (reverse $5) Nothing }
 | subroutine NAME MAYBE_ARGUMENTS NEWLINE BLOCKS end
-  { PUSubroutine () (getTransSpan $1 $6) False $2 $3 (reverse $5) Nothing }
+  { PUSubroutine () (getTransSpan $1 $6) (None () initSrcSpan False) $2 $3 (reverse $5) Nothing }
 | blockData NEWLINE BLOCKS end { PUBlockData () (getTransSpan $1 $4) Nothing (reverse $3) }
 | blockData NAME NEWLINE BLOCKS end { PUBlockData () (getTransSpan $1 $5) (Just $2) (reverse $4) }
 | comment { let (TComment s c) = $1 in PUComment () s (Comment c) }

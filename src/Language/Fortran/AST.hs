@@ -99,7 +99,7 @@ data ProgramUnit a =
       (Maybe [ProgramUnit a]) -- Subprograms
   | PUSubroutine
       a SrcSpan
-      IsRecursive -- Recursive or not
+      (PUFunctionOpt a) -- Subroutine options
       Name
       (Maybe (AList Expression a)) -- Arguments
       [Block a] -- Body

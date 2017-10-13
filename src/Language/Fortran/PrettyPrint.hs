@@ -108,12 +108,18 @@ instance IndentablePretty (ProgramUnit a) where
       where
         nextI = incIndentation i
 
-    pprint v (PUSubroutine _ _ isRec name mArgs body mSubs) i
-      | isRec, v < Fortran90 = tooOld v "Recursive subroutine" Fortran90
+    pprint v (PUSubroutine _ _ funcSpec name mArgs body mSubs) i
+      | Pure _ _ _ <- funcSpec, v < Fortran95 = tooOld v "Pure subroutine" Fortran90
+      | Elemental _ _ <- funcSpec, v < Fortran90 = tooOld v "Elemental subroutine" Fortran90
+      | functionIsRecursive funcSpec, v < Fortran90 = tooOld v "Recursive subroutine" Fortran90
       | isJust mSubs, v < Fortran90 = tooOld v "Subroutine subprogram" Fortran90
       | otherwise =
         indent curI
-          ((if isRec then "recursive" else empty) <+>
+          ((case funcSpec of
+            (Elemental _ _) -> "elemental"
+            (Pure _ _ _) -> "pure"
+            otherwise -> empty) <+>
+          (if functionIsRecursive funcSpec then "recursive" else empty) <+>
           "subroutine" <+> text name <>
           lparen <?> pprint' v mArgs <?> rparen <> newline) <>
         pprint v body nextI <>

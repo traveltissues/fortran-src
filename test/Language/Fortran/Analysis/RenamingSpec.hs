@@ -235,7 +235,7 @@ ex9 = resetSrcSpan . flip fortran90Parser "" $ unlines [
   ]
 
 ex10 = ProgramFile mi77 [ ex10pu1 ]
-ex10pu1 = PUSubroutine () u False "s1" Nothing ex10pu1bs Nothing
+ex10pu1 = PUSubroutine () u (None () u False) "s1" Nothing ex10pu1bs Nothing
 ex10pu1bs =
   [ BlStatement () u Nothing (StEntry () u (ExpValue () u (ValVariable "e1")) Nothing Nothing)
   , BlStatement () u Nothing (StEntry () u (ExpValue () u (ValVariable "e2")) Nothing Nothing)
