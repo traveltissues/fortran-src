@@ -31,7 +31,7 @@ import qualified Data.Map as M
 import qualified Data.IntMap.Lazy as IM
 import qualified Data.Set as S
 import qualified Data.IntSet as IS
-import Data.Graph.Inductive hiding (trc, dom)
+import Data.Graph.Inductive hiding (trc, dom, inn, out, order, rc)
 import Data.Graph.Inductive.PatriciaTree (Gr)
 import Data.Maybe
 import Data.List (foldl', foldl1', (\\), union, intersect)
@@ -46,10 +46,10 @@ type DomMap = IM.IntMap IS.IntSet
 -- pass through node A in order to reach node B. That will be
 -- represented as the relation (B, [A, ...]) in the DomMap.
 dominators :: BBGr a -> DomMap
-dominators gr = IM.map snd $ dataFlowSolver gr init revPostOrder inn out
+dominators gr = IM.map snd $ dataFlowSolver gr init' revPostOrder inn out
   where
     nodeSet   = IS.fromList $ nodes gr
-    init _    = (nodeSet, nodeSet)
+    init' _    = (nodeSet, nodeSet)
 
     inn outF n
       | preNodes@(_:_) <- pre gr n = foldl1' IS.intersection . map outF $ preNodes
@@ -117,8 +117,8 @@ dataFlowSolver gr initF order inF outF = converge (==) $ iterate step initM
   where
     ordNodes = order gr
     initM    = IM.fromList [ (n, initF n) | n <- ordNodes ]
-    step m   = IM.fromList [ (n, (inF (snd . get m) n, outF (fst . get m) n)) | n <- ordNodes ]
-    get m n  = fromJustMsg ("dataFlowSolver: get " ++ show n) $ IM.lookup n m
+    step m   = IM.fromList [ (n, (inF (snd . get' m) n, outF (fst . get' m) n)) | n <- ordNodes ]
+    get' m n  = fromJustMsg ("dataFlowSolver: get " ++ show n) $ IM.lookup n m
 
 -- Similar to above but return a list of states instead of just the final one.
 --dataFlowSolver' :: Ord t => BBGr a            -- ^ basic block graph
@@ -234,8 +234,8 @@ rdBblockGenKill dm bs = foldl' f (IS.empty, IS.empty) $ zip (map gen bs) (map ki
     gen b | null (allLhsVars b) = IS.empty
           | otherwise           = IS.singleton . fromJustMsg "rdBblockGenKill" . insLabel . getAnnotation $ b
     kill = rdDefs dm
-    f (bbgen, bbkill) (gen, kill) =
-      ((bbgen IS.\\ kill) `IS.union` gen, (bbkill IS.\\ gen) `IS.union` kill)
+    f (bbgen, bbkill) (gen', kill') =
+      ((bbgen IS.\\ kill') `IS.union` gen', (bbkill IS.\\ gen') `IS.union` kill')
 
 -- Set of all AST-block labels that also define variables defined by AST-block b
 rdDefs :: Data a => DefMap -> Block (Analysis a) -> IS.IntSet
@@ -265,8 +265,8 @@ genDUMap bm dm gr rdefs = IM.unionsWith IS.union duMaps
           where Just b' = IM.lookup i' bm
         uses   = blockVarUses b
         duMap' = IM.unionWith IS.union duMap bduMap
-        gen b | null (allLhsVars b) = IS.empty
-              | otherwise           = IS.singleton . fromJustMsg "genDUMap" . insLabel . getAnnotation $ b
+        gen b' | null (allLhsVars b) = IS.empty
+              | otherwise           = IS.singleton . fromJustMsg "genDUMap" . insLabel . getAnnotation $ b'
         kill   = rdDefs dm
         inSet' = (inSet IS.\\ kill b) `IS.union` gen b
 
@@ -288,11 +288,11 @@ genUDMap bm dm gr = duMapToUdMap . genDUMap bm dm gr
 
 -- | Convert a UD or DU Map into a graph.
 mapToGraph :: DynGraph gr => BlockMap a -> IM.IntMap IS.IntSet -> gr (Block (Analysis a)) ()
-mapToGraph bm m = mkGraph nodes edges
+mapToGraph bm m = mkGraph nodes' edges'
   where
-    nodes = [ (i, iLabel) | i <- IM.keys m ++ concatMap IS.toList (IM.elems m)
+    nodes' = [ (i, iLabel) | i <- IM.keys m ++ concatMap IS.toList (IM.elems m)
                           , let iLabel = fromJustMsg "mapToGraph" (IM.lookup i bm) ]
-    edges = [ (i, j, ()) | (i, js) <- IM.toList m
+    edges' = [ (i, j, ()) | (i, js) <- IM.toList m
                          , j       <- IS.toList js ]
 
 -- | FlowsGraph : nodes as AST-block (numbered by label), edges
@@ -483,11 +483,11 @@ genInductionVarMapByASTBlock :: forall a. Data a => BackEdgeMap -> BBGr (Analysi
 genInductionVarMapByASTBlock bedges gr = loopsToLabs . genInductionVarMap bedges $ gr
   where
     lnMap       = genLoopNodeMap bedges gr
-    get         = fromMaybe (error "missing loop-header node") . flip IM.lookup lnMap
+    get'         = fromMaybe (error "missing loop-header node") . flip IM.lookup lnMap
     astLabels n = [ i | b <- (universeBi :: Maybe [Block (Analysis a)] -> [Block (Analysis a)]) (lab gr n)
                       , let Just i = insLabel (getAnnotation b) ]
     loopsToLabs         = IM.fromListWith S.union . concatMap loopToLabs . IM.toList
-    loopToLabs (n, ivs) = (map (,ivs) . astLabels) =<< IS.toList (get n)
+    loopToLabs (n, ivs) = (map (,ivs) . astLabels) =<< IS.toList (get' n)
 
 -- It's a 'lattice' but will leave it ungeneralised for the moment.
 data InductionExpr

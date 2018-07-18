@@ -7,18 +7,18 @@ module Language.Fortran.Analysis.BBlocks
   , findLabeledBBlock )
 where
 
-import Data.Generics.Uniplate.Data
+import Data.Generics.Uniplate.Data hiding (transform)
 import Data.Data
 import Control.Monad
-import Control.Monad.State.Lazy
-import Control.Monad.Writer
+import Control.Monad.State.Lazy hiding (fix)
+import Control.Monad.Writer hiding (fix)
 import Text.PrettyPrint.GenericPretty (pretty, Out)
 import Language.Fortran.Analysis
 import Language.Fortran.AST
 import Language.Fortran.Util.Position
 import qualified Data.Map as M
 import qualified Data.IntMap as IM
-import Data.Graph.Inductive
+import Data.Graph.Inductive hiding (lab')
 import Data.Graph.Inductive.PatriciaTree (Gr)
 import Data.List (intercalate)
 import Data.Maybe
@@ -83,10 +83,10 @@ labelBlocksInBBGr = transform (nmapM' (mapM eachBlock))
 -- Sets the label on each Index within a Block to match the Block, for
 -- later look-up.
 labelWithinBlocks :: forall a. Data a => Block (Analysis a) -> Block (Analysis a)
-labelWithinBlocks = perBlock
+labelWithinBlocks = perBlock'
   where
-    perBlock :: Block (Analysis a) -> Block (Analysis a)
-    perBlock b =
+    perBlock' :: Block (Analysis a) -> Block (Analysis a)
+    perBlock' b =
       case b of
         BlStatement a s e st               -> BlStatement a s (mfill i e) (fill i st)
         BlIf        a s e1 mn e2 bss el    -> BlIf        a s (mfill i e1) mn (mmfill i e2) bss el
@@ -155,9 +155,9 @@ toBBlocksPerPU pu
   where
     bs  =
       case pu of
-        PUMain _ _ _ bs _ -> bs;
-        PUSubroutine _ _ _ _ _ bs _ -> bs;
-        PUFunction _ _ _ _ _ _ _ bs _ -> bs
+        PUMain _ _ _ bs' _ -> bs';
+        PUSubroutine _ _ _ _ _ bs' _ -> bs';
+        PUFunction _ _ _ _ _ _ _ bs' _ -> bs'
         _ -> []
     bbs = execBBlocker (processBlocks bs)
     fix = delEmptyBBlocks . delUnreachable . insExitEdges pu lm . delInvalidExits . insEntryEdges pu
@@ -183,16 +183,16 @@ genInOutAssignments pu exit
     name i        = fn ++ "[" ++ show i ++ "]"
     a0            = head $ initAnalysis [prevAnnotation a]
     (a, s, vs)    = case pu of
-      PUFunction _ _ _ _ _ (Just (AList a s vs)) _ _ _ -> (a, s, vs)
-      PUSubroutine _ _ _ _ (Just (AList a s vs)) _ _   -> (a, s, vs)
-      PUFunction a s _ _ _ Nothing _ _ _               -> (a, s, [])
-      PUSubroutine a s _ _ Nothing _ _                 -> (a, s, [])
+      PUFunction _ _ _ _ _ (Just (AList a' s' vs')) _ _ _ -> (a', s', vs')
+      PUSubroutine _ _ _ _ (Just (AList a' s' vs')) _ _   -> (a', s', vs')
+      PUFunction a' s' _ _ _ Nothing _ _ _               -> (a', s', [])
+      PUSubroutine a' s' _ _ Nothing _ _                 -> (a', s', [])
       _                                                -> (error "genInOutAssignments", error "genInOutAssignments", [])
     genAssign v i = analyseAllLhsVars1 $ BlStatement a0 s Nothing (StExpressionAssign a0 s vl vr)
       where
         (vl, vr) = if exit then (v', v) else (v, v')
         v'       = case v of
-          ExpValue _ s (ValVariable _) -> genVar a0 s (name i)
+          ExpValue _ s' (ValVariable _) -> genVar a0 s' (name i)
           _               -> error $ "unhandled genAssign case: " ++ show (fmap (const ()) v)
 
 -- Remove exit edges for bblocks where standard construction doesn't apply.
