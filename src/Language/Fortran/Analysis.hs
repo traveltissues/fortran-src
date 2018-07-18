@@ -225,7 +225,7 @@ lhsExprs x = concatMap lhsOfStmt (universeBi x)
     lhsOfExp _ = []
 
     fstLvl = filter isLExpr . map extractExp . aStrip
-    extractExp (Argument _ _ _ exp) = exp
+    extractExp (Argument _ _ _ exp') = exp'
 
 -- | Return list of expressions that are not "left-hand-side" of
 -- assignment statements.
@@ -287,7 +287,7 @@ computeAllLhsVars = concatMap lhsOfStmt . universeBi
     lhsOfExp (ExpFunctionCall _ _ _ (Just aexps)) = concatMap (match . extractExp) (aStrip aexps)
     lhsOfExp _ = []
 
-    extractExp (Argument _ _ _ exp) = exp
+    extractExp (Argument _ _ _ exp') = exp'
 
     -- Match and give the varname for LHS of statement
     match' v@(ExpValue _ _ ValVariable{}) = varName v
@@ -325,8 +325,8 @@ statementRhsExprs (StExpressionAssign _ _ lhs rhs)
 statementRhsExprs StDeclaration{} = []
 statementRhsExprs (StIfLogical _ _ _ s) = statementRhsExprs s
 statementRhsExprs (StDo _ _ _ l s) = universeBi l ++ doSpecRhsExprs s
-  where doSpecRhsExprs (Just (DoSpecification _ _ s e1 e2)) =
-           (e1 : universeBi e2) ++ statementRhsExprs s
+  where doSpecRhsExprs (Just (DoSpecification _ _ s' e1 e2)) =
+           (e1 : universeBi e2) ++ statementRhsExprs s'
         doSpecRhsExprs Nothing = []
 statementRhsExprs s = universeBi s
 
@@ -372,7 +372,7 @@ intrinsicUses = fmap snd . intrinsicDefsUses
 -- return dummy arg names (defined, used) by intrinsic
 intrinsicDefsUses :: Expression (Analysis a) -> Maybe ([Name], [Name])
 intrinsicDefsUses f = both (map (dummyArg (varName f))) <$> getIntrinsicDefsUses (srcName f) allIntrinsics
-  where both f (x, y) = (f x, f y)
+  where both f' (x, y) = (f' x, f' y)
 
 -- Local variables:
 -- mode: haskell

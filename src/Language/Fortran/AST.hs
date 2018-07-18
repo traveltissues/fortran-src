@@ -139,8 +139,8 @@ buildPUFunctionOpt a b =
                                          then Left "Function cannot be both elemental and recursive. "
                                          else Right . Elemental () $ getTransSpan a b
     (_, (Elemental () _))           -> buildPUFunctionOpt b a
-    ((Pure () _ r), b)              -> Right $ Pure () (getTransSpan a b) (r || functionIsRecursive b)
-    (a, (Pure () _ r))              -> Right $ Pure () (getTransSpan a b) (r || functionIsRecursive a)
+    ((Pure () _ r), b')              -> Right $ Pure () (getTransSpan a b') (r || functionIsRecursive b')
+    (a', (Pure () _ r))              -> Right $ Pure () (getTransSpan a' b) (r || functionIsRecursive a')
     ((None () _ r), (None () _ r')) -> Right $ None () (getTransSpan a b) (r || r')
 -- Should parse: "elemental pure recursive function f()\nend": Right (Elemental ()) FAILED [4]
 
@@ -473,10 +473,10 @@ data Declarator a =
   deriving (Eq, Show, Data, Typeable, Generic, Functor)
 
 setInitialisation :: Declarator a -> Expression a -> Declarator a
-setInitialisation (DeclVariable a s v l Nothing) init =
-  DeclVariable a (getTransSpan s init) v l (Just init)
-setInitialisation (DeclArray a s v ds l Nothing) init =
-  DeclArray a (getTransSpan s init) v ds l (Just init)
+setInitialisation (DeclVariable a s v l Nothing) init' =
+  DeclVariable a (getTransSpan s init') v l (Just init')
+setInitialisation (DeclArray a s v ds l Nothing) init' =
+  DeclArray a (getTransSpan s init') v ds l (Just init')
 
 data DimensionDeclarator a =
   DimensionDeclarator a SrcSpan (Maybe (Expression a)) (Maybe (Expression a))
@@ -630,7 +630,7 @@ instance Spanned (ProgramFile a) where
   getSpan (ProgramFile _ pus) =
     case pus of
       [] -> SrcSpan initPosition initPosition
-      pus -> getSpan pus
+      pus' -> getSpan pus'
 
   setSpan _ _ = error "Cannot set span to a program unit"
 
