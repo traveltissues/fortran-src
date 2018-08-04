@@ -125,8 +125,7 @@ programUnit (PUFunction a s ty rec name args res blocks m_contains) = do
   blocks3     <- mapM renameDeclDecls blocks2 -- handle declarations
   m_contains' <- renameSubPUs m_contains      -- handle contained program units
   blocks4     <- mapM renameBlock blocks3     -- process all uses of variables
-  let env     = M.singleton name (name', NTSubprogram)
-  let a'      = a { moduleEnv = Just env }    -- also annotate it on the program unit
+  a' <- annotateUnit a name (name', NTSubprogram) -- also annotate it on the program unit
   popScope
   let pu' = PUFunction a' s ty rec name args' res' blocks4 m_contains'
   return . setSourceName name . setUniqueName name' $ pu'
@@ -138,8 +137,7 @@ programUnit (PUSubroutine a s rec name args blocks m_contains) = do
   blocks2     <- mapM renameDeclDecls blocks1 -- handle declarations
   m_contains' <- renameSubPUs m_contains      -- handle contained program units
   blocks3     <- mapM renameBlock blocks2     -- process all uses of variables
-  let env     = M.singleton name (name', NTSubprogram)
-  let a'      = a { moduleEnv = Just env }    -- also annotate it on the program unit
+  a' <- annotateUnit a name (name', NTSubprogram) -- also annotate it on the program unit
   popScope
   let pu' = PUSubroutine a' s rec name args' blocks3 m_contains'
   return . setSourceName name . setUniqueName name' $ pu'
@@ -154,6 +152,13 @@ programUnit (PUMain a s n blocks m_contains) = do
   return (PUMain a s n blocks'' m_contains')
 
 programUnit pu = return pu
+
+annotateUnit :: Monad m =>
+                Analysis a -> String -> (String, NameType) -> m (Analysis a)
+annotateUnit a n (n', sp) = do
+  let env = M.singleton n (n', sp)
+      a' = a {moduleEnv = Just env}
+  return a'
 
 returnBlocksEnv :: Data a => [Block (Analysis a)]
                           -> String
