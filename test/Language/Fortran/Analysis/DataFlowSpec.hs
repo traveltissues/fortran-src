@@ -99,12 +99,7 @@ spec =
 
     describe "loop4 alt (module)" $ do
       let pf = pParser F90 programLoop4Alt
-          sgr = genSuperBBGr (genBBlockMap pf)
-          bm = genBlockMap pf
-          dm = genDefMap bm
-          gr = superBBGrGraph sgr
-          domMap = dominators gr
-          bedges = genBackEdgeMap domMap gr
+          (sgr, gr, bm, dm, rDefs, flTo, domMap, bedges, diMap) = processPf pf
       it "genBackEdgeMap" $ do
         let gr' = testGraph F90 "loop4" programLoop4Alt
         testBackEdges F90 "loop4" programLoop4Alt `shouldBe`
@@ -293,6 +288,19 @@ findLabelsBlEdges pf = S.fromList . map convEdge
 findBBlockBl :: BBGr (Analysis a) -> Int -> IS.IntSet
 findBBlockBl gr = IS.fromList . mapMaybe (insLabel . getAnnotation) . concat . maybeToList . lab gr
 
+-- Helper
+processPf :: (Data a, Monad m) => ProgramFile (Analysis a) -> m (SuperBBGr (Analysis a), BBGr (Analysis a), BlockMap a, DefMap, InOutMap IS.IntSet, FlowsGraph a, DomMap, BackEdgeMap, DerivedInductionMap)
+processPf pf = do
+  let sgr = genSuperBBGr (genBBlockMap pf)
+      gr = superBBGrGraph sgr
+      bm = genBlockMap pf
+      dm = genDefMap bm
+      rDefs = reachingDefinitions dm gr
+      flTo = genFlowsToGraph bm dm gr rDefs
+      domMap = dominators gr
+      bedges = genBackEdgeMap domMap gr
+      diMap = genDerivedInductionMap bedges gr
+  return (sgr, gr, bm, dm, rDefs, flTo, domMap, bedges, diMap)
 --------------------------------------------------
 -- Test programs
 
